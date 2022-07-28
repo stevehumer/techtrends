@@ -50,15 +50,17 @@ def index():
 
 # Health endpoint
 @app.route('/healthz')
-def status():
-  response = app.response_class(
-          response=json.dumps({"result":"OK - healthy"}),
-          status=200,
-          mimetype='application/json'
-  )
-
-  log_message('Healthz request successful!')
-  return response
+def healthz():
+    try:
+        connection = get_db_connection()
+        connection.cursor()
+        connection.execute('SELECT * FROM posts')
+        connection.close()
+        log_message('Healthz request successful!')
+        return {'result': 'OK - healthy'}, 200
+    except Exception:
+        log_message('Healthz request failed!')
+        return {'result': 'ERROR - unhealthy'}, 500
 
 # Metrics endpoint
 @app.route('/metrics')
