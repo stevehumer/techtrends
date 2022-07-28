@@ -2,6 +2,7 @@ import sqlite3, logging, sys
 
 from flask import Flask, jsonify, json, render_template, request, url_for, redirect, flash
 from werkzeug.exceptions import abort
+from datetime import datetime
 
 db_connection_count = 0
 
@@ -56,7 +57,7 @@ def status():
           mimetype='application/json'
   )
 
-  app.logger.debug('Healthz request successful!')
+  log_message('Healthz request successful!')
   return response
 
 # Metrics endpoint
@@ -68,13 +69,13 @@ def metrics():
           mimetype='application/json'
   )
 
-  app.logger.debug('Metrics request successful!')
+  log_message('Metrics request successful!')
   return response
 
 # About endpoint
 @app.route('/about')
 def about():
-    app.logger.debug('About page retrieved!')
+    log_message('About page retrieved!')
     return render_template('about.html')
 
 # Article endpoint based on ID
@@ -82,10 +83,10 @@ def about():
 def post(post_id):
     post = get_post(post_id)
     if post is None:
-      app.logger.debug('Article with id {id} does not exist!'.format(id=post_id))
+      log_message('Article with id {id} does not exist!'.format(id=post_id))
       return render_template('404.html'), 404
     else:
-      app.logger.debug('Article {title} retrieved!'.format(title=post['title']))
+      log_message('Article {title} retrieved!'.format(title=post['title']))
       return render_template('post.html', post=post)
 
 # Create endpoint
@@ -103,10 +104,15 @@ def create():
             connection.commit()
             connection.close()
 
-            app.logger.debug('Article {title} created!'.format(title=title))
+            log_message('Article {title} created!'.format(title=title))
             return redirect(url_for('index'))
 
     return render_template('create.html')
+
+# Log messages with timestamp
+def log_message(msg):
+    app.logger.debug('{time} | {message}'.format(
+        time=datetime.now().strftime("%m/%d/%Y, %H:%M:%S"), message=msg))
 
 # Start application
 if __name__ == "__main__":
