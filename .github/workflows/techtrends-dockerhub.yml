@@ -1,4 +1,4 @@
-name: Docker Build and Docker Push
+name: TechTrends - Package with Docker
 
 on:
   push:
