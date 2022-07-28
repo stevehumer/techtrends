@@ -5,25 +5,27 @@ from werkzeug.exceptions import abort
 
 connection_count = 0
 
-# Function to get a database connection.
+##############
+## DB CALLS ##
+##############
+
+# Get database connection
 def get_db_connection():
-    increment_connection_count()
+    global connection_count 
+    
     connection = sqlite3.connect('database.db')
     connection.row_factory = sqlite3.Row
+    connection_count += 1
     return connection
 
-def increment_connection_count():
-    global connection_count 
-    connection_count += 1
-
-# Function to get a post using its ID
+# Get post based on ID
 def get_post(post_id):
     connection = get_db_connection()
     post = connection.execute('SELECT * FROM posts WHERE id = ?', (post_id,)).fetchone()
     connection.close()
     return post
 
-# Function to get all posts
+# Get all posts
 def get_posts():
     connection = get_db_connection()
     posts = connection.execute('SELECT * FROM posts').fetchall()
@@ -38,14 +40,14 @@ app.config['SECRET_KEY'] = 'your secret key'
 ### ROUTES ###
 ##############
 
-# Define the main route of the web application 
+# Main route
 @app.route('/')
 def index():
     posts = get_posts()
 
     return render_template('index.html', posts=posts)
 
-# Define the health endpoint
+# Health endpoint
 @app.route('/healthz')
 def status():
   response = app.response_class(
@@ -57,40 +59,36 @@ def status():
   app.logger.debug('Healthz request successful!')
   return response
 
-# Define the metrics endpoint
+# Metrics endpoint
 @app.route('/metrics')
 def metrics():
-  posts = get_posts()
-
   response = app.response_class(
-          response=json.dumps({"db_connection_count": connection_count,"post_count": len(posts)}),
+          response=json.dumps({"db_connection_count": connection_count,"post_count": len(get_posts())}),
           status=200,
           mimetype='application/json'
   )
 
-  ## log line
   app.logger.debug('Metrics request successful!')
   return response
 
-# Define how each individual article is rendered 
-# If the post ID is not found a 404 page is shown
-@app.route('/<int:post_id>')
-def post(post_id):
-    post = get_post(post_id)
-    if post is None:
-      app.logger.debug('Article does not exist, returning 404 page')
-      return render_template('404.html'), 404
-    else:
-      app.logger.debug(post['created'] + ', Article ' + post['title'] + ' retrieved!')
-      return render_template('post.html', post=post)
-
-# Define the About Us page
+# About endpoint
 @app.route('/about')
 def about():
     app.logger.debug('About page retrieved!')
     return render_template('about.html')
 
-# Define the post creation functionality 
+# Article endpoint based on ID
+@app.route('/<int:post_id>')
+def post(post_id):
+    post = get_post(post_id)
+    if post is None:
+      app.logger.debug('Article with id {id} does not exist!'.format(id=post_id))
+      return render_template('404.html'), 404
+    else:
+      app.logger.debug('Article {title} retrieved!'.format(title=post['title']))
+      return render_template('post.html', post=post)
+
+# Create endpoint
 @app.route('/create', methods=('GET', 'POST'))
 def create():
     if request.method == 'POST':
@@ -101,17 +99,16 @@ def create():
             flash('Title is required!')
         else:
             connection = get_db_connection()
-            connection.execute('INSERT INTO posts (title, content) VALUES (?, ?)',
-                         (title, content))
+            connection.execute('INSERT INTO posts (title, content) VALUES (?, ?)', (title, content))
             connection.commit()
             connection.close()
 
-            app.logger.debug('Article ' + title + ' created!')
+            app.logger.debug('Article {title} created!'.format(title=title))
             return redirect(url_for('index'))
 
     return render_template('create.html')
 
-# Start the application on port 3111 and set up logging to stdout
+# Start application
 if __name__ == "__main__":
    logging.basicConfig(stream=sys.stdout,level=logging.DEBUG)
    app.run(host='0.0.0.0', port='3111')

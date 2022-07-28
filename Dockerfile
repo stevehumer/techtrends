@@ -1,7 +1,7 @@
 FROM python:3.8
 LABEL maintainer="Stephen Humer"
 
-COPY . /app
+COPY ./techtrends /app
 WORKDIR /app
 RUN pip install -r requirements.txt && python init_db.py
 
