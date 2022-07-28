@@ -3,7 +3,7 @@ import sqlite3, logging, sys
 from flask import Flask, jsonify, json, render_template, request, url_for, redirect, flash
 from werkzeug.exceptions import abort
 
-connection_count = 0
+db_connection_count = 0
 
 ##############
 ## DB CALLS ##
@@ -11,11 +11,11 @@ connection_count = 0
 
 # Get database connection
 def get_db_connection():
-    global connection_count 
+    global db_connection_count 
     
     connection = sqlite3.connect('database.db')
     connection.row_factory = sqlite3.Row
-    connection_count += 1
+    db_connection_count += 1
     return connection
 
 # Get post based on ID
@@ -63,7 +63,7 @@ def status():
 @app.route('/metrics')
 def metrics():
   response = app.response_class(
-          response=json.dumps({"db_connection_count": connection_count,"post_count": len(get_posts())}),
+          response=json.dumps({"db_connection_count": db_connection_count,"post_count": len(get_posts())}),
           status=200,
           mimetype='application/json'
   )
