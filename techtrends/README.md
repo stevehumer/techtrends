@@ -14,7 +14,7 @@ The application is running on port `3111` and you can access it by querying the 
 
 ## Run as Docker container
 
-1. Create a docker image by using the `docker build -t techtrends .` command.
+1. Create a docker image by using the `docker build -t techtrends .` command (make sure you are in the root project folder).
 2. Run the docker image from step 1 as a docker container using the `docker run -d -p 7111:3111 --name techtrends techtrends` command. 
 
 You can access it by quering the `http://127.0.0.1:7111/` endpoint. 

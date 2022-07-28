@@ -1,0 +1,9 @@
+.github/
+.vagrant/
+.gitignore
+argocd/
+helm/
+kubernetes/
+screenshots/
+components.png
+Vagrantfile
