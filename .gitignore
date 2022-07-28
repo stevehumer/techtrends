@@ -1,0 +1,8 @@
+.env/
+.venv/
+.vagrant/
+.myvenv/
+__pycache__/
+.DS_Store
+*/**/*.db
+.vscode/
