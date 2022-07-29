@@ -5,6 +5,7 @@ from werkzeug.exceptions import abort
 from datetime import datetime
 
 db_connection_count = 0
+logger = logging.getLogger('app')
 
 ##############
 ## DB CALLS ##
@@ -46,6 +47,7 @@ app.config['SECRET_KEY'] = 'your secret key'
 def index():
     posts = get_posts()
 
+    logger.debug('Main route rendered!')
     return render_template('index.html', posts=posts)
 
 # Health endpoint
@@ -56,10 +58,10 @@ def healthz():
         connection.cursor()
         connection.execute('SELECT * FROM posts')
         connection.close()
-        log_message('Healthz request successful!')
+        logger.debug('Healthz request successful!')
         return {'result': 'OK - healthy'}, 200
     except Exception:
-        log_message('Healthz request failed!')
+        logger.error('Healthz request failed!')
         return {'result': 'ERROR - unhealthy'}, 500
 
 # Metrics endpoint
@@ -71,13 +73,13 @@ def metrics():
           mimetype='application/json'
   )
 
-  log_message('Metrics request successful!')
+  logger.debug('Metrics request successful!')
   return response
 
 # About endpoint
 @app.route('/about')
 def about():
-    log_message('About page retrieved!')
+    logger.debug('About page retrieved!')
     return render_template('about.html')
 
 # Article endpoint based on ID
@@ -85,10 +87,10 @@ def about():
 def post(post_id):
     post = get_post(post_id)
     if post is None:
-      log_message('Article with id {id} does not exist!'.format(id=post_id))
+      logger.debug('Article with id {id} does not exist!'.format(id=post_id))
       return render_template('404.html'), 404
     else:
-      log_message('Article {title} retrieved!'.format(title=post['title']))
+      logger.debug('Article {title} retrieved!'.format(title=post['title']))
       return render_template('post.html', post=post)
 
 # Create endpoint
@@ -106,17 +108,26 @@ def create():
             connection.commit()
             connection.close()
 
-            log_message('Article {title} created!'.format(title=title))
+            logger.debug('Article {title} created!'.format(title=title))
             return redirect(url_for('index'))
 
     return render_template('create.html')
 
-# Log messages with timestamp
-def log_message(msg):
-    app.logger.debug('{time} | {message}'.format(
-        time=datetime.now().strftime("%m/%d/%Y, %H:%M:%S"), message=msg))
+def init_logger(): 
+    logger.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    stdout_handler.setLevel(logging.DEBUG)
+    stdout_handler.setFormatter(formatter)
+    logger.addHandler(stdout_handler)
+
+    stderr_handler = logging.StreamHandler(sys.stderr)
+    stderr_handler.setLevel(logging.ERROR)
+    stderr_handler.setFormatter(formatter)
+    logger.addHandler(stderr_handler)
 
 # Start application
 if __name__ == "__main__":
-   logging.basicConfig(level=logging.DEBUG)
-   app.run(host='0.0.0.0', port='3111')
+    init_logger()
+    app.run(host='0.0.0.0', port='3111')
